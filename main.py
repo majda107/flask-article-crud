@@ -1,6 +1,16 @@
+import logging
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt import JWT, jwt_required, current_identity
+try:
+    from flask_cors import CORS  # The typical way to import flask-cors
+except ImportError:
+    # Path hack allows examples to be run without installation.
+    import os
+    parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.sys.path.insert(0, parentdir)
+
+    from flask_cors import CORS
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
@@ -67,12 +77,12 @@ def users():
 
 @app.route('/articles')
 def articles():
-    return jsonify({"articles": a.serialize() for a in Article.query.all()})
+    return jsonify({"articles": [a.serialize() for a in Article.query.all()]})
 
 
-@app.route('/articles/create', methods=['POST'])
-@jwt_required()
-def addArticle():
+@app.route('/articles/create', methods=["POST"])
+# @jwt_required()
+def add_article():
     c = request.json
 
     a = Article(title=c['title'], content=c['content'],
@@ -83,7 +93,13 @@ def addArticle():
     return 'Ok'
 
 
-@app.route('/register', methods=['POST'])
+@app.route("/articles/create", methods=["OPTIONS"])
+def add_article2():
+    print("E")
+    return "ok"
+
+
+@app.route('/register')
 def register():
     c = request.json
     u = User(username=c["username"], email=c["email"], password=c["password"])
@@ -93,6 +109,22 @@ def register():
 
     return 'Ok'
 
+
+@app.after_request
+def add_headers(response):
+    response.headers.add('Content-Type', 'application/json')
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Methods',
+                         'PUT, GET, POST, DELETE, OPTIONS')
+    response.headers.add('Access-Control-Allow-Headers',
+                         'Content-Type,Authorization')
+    response.headers.add('Access-Control-Expose-Headers',
+                         'Content-Type,Content-Length,Authorization,X-Pagination')
+    return response
+
+
+app.config['CORS_HEADERS'] = 'Content-Type'
+# CORS(app)
 
 if __name__ == "__main__":
     app.run(debug=True)
