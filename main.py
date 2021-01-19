@@ -1,21 +1,24 @@
 import logging
+from dictalchemy import make_class_dictable
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt import JWT, jwt_required, current_identity
-try:
-    from flask_cors import CORS  # The typical way to import flask-cors
-except ImportError:
-    # Path hack allows examples to be run without installation.
-    import os
-    parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    os.sys.path.insert(0, parentdir)
+# try:
+#     from flask_cors import CORS  # The typical way to import flask-cors
+# except ImportError:
+#     # Path hack allows examples to be run without installation.
+#     import os
+#     parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#     os.sys.path.insert(0, parentdir)
 
-    from flask_cors import CORS
+#     from flask_cors import CORS
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 app.config['SECRET_KEY'] = 'majda-je-velka-holka'
 db = SQLAlchemy(app)
+
+make_class_dictable(db.Model)
 
 
 class User(db.Model):
@@ -32,12 +35,31 @@ class User(db.Model):
         }
 
 
+class ArticleTag(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+
+    article_id = db.Column(db.Integer, db.ForeignKey('article.id'),
+                           nullable=False)
+    # article = db.relationship('Article',
+    #                           backref=db.backref('article', lazy=True))
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }
+
+
 class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(80), nullable=False)
     content = db.Column(db.String(1000), nullable=False)
     image = db.Column(db.String(80), nullable=False)
     author = db.Column(db.String(80), nullable=False)
+    visible = db.Column(db.Boolean, default=False, nullable=False)
+
+    tags = db.relationship("ArticleTag", backref="article", lazy=True)
 
     def serialize(self):
         return {
@@ -45,7 +67,9 @@ class Article(db.Model):
             'title': self.title,
             'content': self.content,
             'image': self.image,
-            'author': self.author
+            'author': self.author,
+            'visible': self.visible,
+            'tags': [t.serialize() for t in (self.tags)]
         }
 
 # AUTH
@@ -77,6 +101,14 @@ def users():
 
 @app.route('/articles')
 def articles():
+    # return jsonify({"articles": [a.serialize() for a in Article.query.all()]})
+    print(current_identity)
+    return jsonify({"articles": [a.serialize() for a in Article.query.filter_by(visible=True)]})
+
+
+@app.route('/articles/all')
+@jwt_required()
+def all_articles():
     return jsonify({"articles": [a.serialize() for a in Article.query.all()]})
 
 
@@ -112,6 +144,31 @@ def delete_article(id):
     db.session.commit()
 
     return jsonify({"result": "ok"})
+
+
+@app.route('/articles/put', methods=["PUT"])
+@jwt_required()
+def put_article():
+    # c = request.json
+    a = Article.query.filter_by(id=request.json['id']).first()
+
+    del request.json['id']
+
+    print(request.json)
+    print(request.json['tags'])
+
+    a.fromdict(request.json, follow=['tags'])
+
+    a.tags[0].name = 'e'
+    print(a.tags[0].name)
+
+    db.session.commit()
+    return jsonify(a.serialize())
+
+
+# @app.route('/test')
+# def testa():
+#     return "SDsadsaa"
 
 
 @app.route('/register')
