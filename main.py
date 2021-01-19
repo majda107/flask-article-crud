@@ -80,8 +80,16 @@ def articles():
     return jsonify({"articles": [a.serialize() for a in Article.query.all()]})
 
 
+@app.route('/article/<id>')
+def article(id):
+    a = Article.query.filter_by(id=id).first()
+    if a is None:
+        return "Not found"
+    return jsonify(a.serialize())
+
+
 @app.route('/articles/create', methods=["POST"])
-# @jwt_required()
+@jwt_required()
 def add_article():
     c = request.json
 
@@ -90,13 +98,20 @@ def add_article():
     db.session.add(a)
     db.session.commit()
 
-    return 'Ok'
+    return jsonify({"result": "ok"})
 
 
-@app.route("/articles/create", methods=["OPTIONS"])
-def add_article2():
-    print("E")
-    return "ok"
+@app.route('/articles/delete/<id>', methods=["DELETE"])
+@jwt_required()
+def delete_article(id):
+    a = Article.query.filter_by(id=id).first()
+    if a is None:
+        return "Not found"
+
+    db.session.delete(a)
+    db.session.commit()
+
+    return jsonify({"result": "ok"})
 
 
 @app.route('/register')
