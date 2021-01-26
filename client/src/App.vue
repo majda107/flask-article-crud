@@ -10,8 +10,11 @@
     <div class="navbar-collapse" id="navbarNav">
       <ul class="navbar-nav">
         <li class="nav-item">
-          <!-- <a class="nav-link" href="#">Articles</a> -->
           <router-link to="/articles" class="nav-link">Articles</router-link>
+        </li>
+
+        <li class="nav-item">
+          <router-link to="/pages" class="nav-link">Pages</router-link>
         </li>
 
         <!-- <li class="nav-item" v-for="i in menu" :key="i.id">
@@ -19,8 +22,13 @@
             i.title
           }}</router-link>
         </li> -->
+
+        <li class="nav-item">
+          <div class="divider"></div>
+        </li>
+
         <li class="nav-item" v-for="it in menu" :key="it">
-          <router-link class="nav-link" :to="it.link">{{
+          <router-link class="nav-link" :to="`/page/${it.link}`">{{
             it.title
           }}</router-link>
           <!-- <a class="nav-link" :href="it.link">
@@ -79,5 +87,12 @@ export default defineComponent({
 
 .login {
   margin-right: 18px;
+}
+
+.divider {
+  width: 1px;
+  height: 100%;
+  background-color: gray;
+  margin: 0 12px;
 }
 </style>

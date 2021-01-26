@@ -3,6 +3,8 @@ from dictalchemy import make_class_dictable
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt import JWT, jwt_required, current_identity
+
+
 # try:
 #     from flask_cors import CORS  # The typical way to import flask-cors
 # except ImportError:
@@ -12,6 +14,7 @@ from flask_jwt import JWT, jwt_required, current_identity
 #     os.sys.path.insert(0, parentdir)
 
 #     from flask_cors import CORS
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
@@ -85,6 +88,25 @@ class MenuItem(db.Model):
             'link': self.link
         }
 
+
+class Page(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(40), nullable=False)
+    content = db.Column(db.String(4000), nullable=False)
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'content': self.content
+        }
+
+    def serialize_light(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }
+
 # AUTH
 
 
@@ -112,9 +134,24 @@ def users():
     return jsonify({"users": [u.serialize() for u in User.query.all()]})
 
 
+# MENU
+
 @app.route('/api/menu', methods=['GET'])
 def menu():
     return jsonify([m.serialize() for m in MenuItem.query.all()])
+
+
+@app.route('/api/menu/<id>', methods=['PUT'])
+def menu_put(id):
+    m = MenuItem.query.filter_by(id=id).first()
+
+    if 'id' in request.json:
+        del request.json['id']
+
+    m.fromdict(request.json)
+    db.session.commit()
+
+    return jsonify(m.serialize())
 
 
 @app.route('/api/menu/create', methods=['POST'])
@@ -133,6 +170,55 @@ def menu_add():
     db.session.commit()
 
     return jsonify(m.serialize())
+
+# PAGES
+
+
+@app.route('/api/page', methods=['GET'])
+def pages():
+    return jsonify([p.serialize_light() for p in Page.query.all()])
+
+
+@app.route('/api/page/create', methods=['POST'])
+# @jwt_required()
+def page_add():
+    p = Page()
+
+    if 'id' in request.json:
+        del request.json['id']
+
+    print(request.json)
+
+    p.fromdict(request.json)
+
+    db.session.add(p)
+    db.session.commit()
+
+    return jsonify(p.serialize_light())
+
+
+@app.route('/api/page/<name>', methods=['GET'])
+def page(name):
+    p = Page.query.filter_by(name=name).first()
+    if p is None:
+        return "Not found"
+
+    print(p.content)
+
+    return jsonify(p.serialize())
+
+
+@app.route('/api/page/<id>', methods=['PUT'])
+def page_put(id):
+    p = Page.query.filter_by(id=id).first()
+
+    if 'id' in request.json:
+        del request.json['id']
+
+    p.fromdict(request.json)
+    db.session.commit()
+
+    return jsonify(p.serialize())
 
 
 @app.route('/articles')
