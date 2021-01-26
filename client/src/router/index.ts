@@ -4,6 +4,7 @@ import ArticleView from "@/views/ArticleView.vue"
 import ArticlesView from "@/views/ArticlesView.vue"
 import LoginView from "@/views/LoginView.vue"
 import NewView from "@/views/NewView.vue"
+import EditorView from "@/views/EditorView.vue"
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -39,6 +40,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/new',
     name: "New",
     component: NewView
+  },
+  {
+    path: '/editor',
+    name: "View",
+    component: EditorView
   }
 ]
 
