@@ -72,6 +72,19 @@ class Article(db.Model):
             'tags': [t.serialize() for t in (self.tags)]
         }
 
+
+class MenuItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(40), nullable=False)
+    link = db.Column(db.String(50), nullable=False)
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'link': self.link
+        }
+
 # AUTH
 
 
@@ -96,7 +109,30 @@ def hello_world():
 
 @app.route('/users')
 def users():
-    return jsonify({"users": u.serialize() for u in User.query.all()})
+    return jsonify({"users": [u.serialize() for u in User.query.all()]})
+
+
+@app.route('/api/menu', methods=['GET'])
+def menu():
+    return jsonify([m.serialize() for m in MenuItem.query.all()])
+
+
+@app.route('/api/menu/create', methods=['POST'])
+@jwt_required()
+def menu_add():
+    m = MenuItem()
+
+    if 'id' in request.json:
+        del request.json['id']
+
+    print(request.json)
+
+    m.fromdict(request.json)
+
+    db.session.add(m)
+    db.session.commit()
+
+    return jsonify(m.serialize())
 
 
 @app.route('/articles')

@@ -13,8 +13,19 @@
           <!-- <a class="nav-link" href="#">Articles</a> -->
           <router-link to="/articles" class="nav-link">Articles</router-link>
         </li>
-        <li class="nav-item">
-          <!-- <a class="nav-link" href="#">Login</a> -->
+
+        <!-- <li class="nav-item" v-for="i in menu" :key="i.id">
+          <router-link class="nav-link" :href="i.link">{{
+            i.title
+          }}</router-link>
+        </li> -->
+        <li class="nav-item" v-for="it in menu" :key="it">
+          <router-link class="nav-link" :to="it.link">{{
+            it.title
+          }}</router-link>
+          <!-- <a class="nav-link" :href="it.link">
+            {{ it.title }}
+          </a> -->
         </li>
       </ul>
     </div>
@@ -30,13 +41,25 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, ref } from "vue";
 import { loggedIn } from "@/state";
+import { getJson } from "./services/fetch.service";
+import { MenuItem } from "@/models/menu-item.model";
 
 export default defineComponent({
   setup() {
+    const menu = ref([] as MenuItem[]);
+
+    async function getMenuItems() {
+      menu.value = (await getJson("api/menu")) as MenuItem[];
+      console.log(menu.value);
+    }
+
+    getMenuItems();
+
     return {
       loggedIn,
+      menu,
     };
   },
 });
