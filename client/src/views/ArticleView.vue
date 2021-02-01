@@ -4,13 +4,16 @@
       Back
     </button>
 
-    <template v-if="loggedIn">
+    <template v-if="loggedIn && article != null">
       <button v-if="!edit" class="btn btn-primary edit" @click="edit = true">
         Edit
       </button>
       <button v-else class="btn btn-success edit" @click="save()">Save</button>
 
       <button class="btn btn-danger edit" @click="remove()">Delete</button>
+      <button class="btn btn-secondary edit" @click="favorite()">
+        {{ article.favorite ? "Unfavorite" : "Favorite" }}
+      </button>
     </template>
 
     <form v-if="edit">
@@ -63,16 +66,18 @@ import ArticleModel from "@/models/article.model";
 import { fetchJsonAuth, getJson, postJsonAuth } from "@/services/fetch.service";
 import router from "@/router";
 import { loggedIn } from "@/state";
+import ArticleFavoriteModel from "@/models/article-favorite.model";
 
 export default defineComponent({
   setup(props, ctx) {
     const route = useRoute();
     const edit = ref(false);
 
-    const article = ref(null as ArticleModel | null);
+    const article = ref(null as ArticleFavoriteModel | null);
 
     async function init() {
-      const res = await getJson(`article/${route.params.id}`);
+      // const res = await getJson(`article/${route.params.id}`);
+      const res = await fetchJsonAuth(`article/${route.params.id}`);
 
       console.log("Fetched article", res);
       article.value = res;
@@ -81,6 +86,18 @@ export default defineComponent({
     async function save() {
       const res = await postJsonAuth("articles/put", article.value, "put");
       edit.value = false;
+    }
+
+    async function favorite() {
+      // console.log("E");
+      if (article.value == null) return;
+
+      await fetchJsonAuth(
+        `article/favorite/${article.value?.id}?add=${!article.value.favorite}`,
+        "post"
+      );
+
+      article.value.favorite = !article.value?.favorite ?? false;
     }
 
     async function remove() {
@@ -101,6 +118,7 @@ export default defineComponent({
       edit,
       remove,
       loggedIn: loggedIn,
+      favorite,
     };
   },
 });

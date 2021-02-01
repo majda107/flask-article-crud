@@ -6,11 +6,15 @@ export async function fetchJsonAuth(path: string, method: "get" | "post" | "dele
         method: method,
         headers: {
             "Content-Type": "application/json",
-            "Authorization": `JWT ${token.value}`
+            "Authorization": `JWT ${token?.value}`
         },
     });
 
-    return await res.json();
+    try {
+        return await res.json();
+    } catch (e) {
+        return {};
+    }
 }
 
 export async function postJson(path: string, body: any) {

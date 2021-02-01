@@ -1,50 +1,87 @@
 <template>
-  <ul>
-    <li
-      v-for="(a, i, k) in articles"
-      :key="k"
-      class="card"
-      :disabled="a.visible != true"
-      @click="$router.push(`/article/${a.id}`)"
-    >
-      <!-- <h2 @click="$router.push(`/article/${a.id}`)">{{ a.title }}</h2> -->
-      <!-- <button @click="remove(a)">remove</button> -->
-
-      <div class="card-header">
-        {{ a.author || "No author" }}
+  <div>
+    <form>
+      <div class="form-group">
+        <input type="checkbox" v-model="filter" class="form-check-input" />
+        <label class="form-check-label">Filter</label>
       </div>
 
-      <img :src="a.image" class="card-img-top" />
-      <div class="card-body">
-        <h4 class="card-title">{{ a.title }}</h4>
-        <p class="card-text">
-          {{ a.content }}
-        </p>
+      <div class="form-group">
+        <input
+          type="checkbox"
+          v-model="favorite"
+          :disabled="!filter"
+          class="form-check-input"
+        />
+        <label class="form-check-label">Favorite</label>
       </div>
-    </li>
-  </ul>
+    </form>
+    <ul>
+      <li
+        v-for="(a, i, k) in articles"
+        :key="k"
+        class="card"
+        :disabled="a.visible != true"
+        @click="$router.push(`/article/${a.id}`)"
+      >
+        <!-- <h2 @click="$router.push(`/article/${a.id}`)">{{ a.title }}</h2> -->
+        <!-- <button @click="remove(a)">remove</button> -->
+
+        <div class="card-header">
+          {{ a.author || "No author" }}
+
+          <span v-if="a.favorite">[FAVORITE]</span>
+        </div>
+
+        <img :src="a.image" class="card-img-top" />
+        <div class="card-body">
+          <h4 class="card-title">{{ a.title }}</h4>
+          <p class="card-text">
+            {{ a.content }}
+          </p>
+        </div>
+      </li>
+    </ul>
+  </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, watch } from "vue";
 import { fetchJsonAuth, getJson } from "@/services/fetch.service";
-import ArticleModel from "@/models/article.model";
 import { loggedIn } from "@/state";
+import ArticleFavoriteModel from "@/models/article-favorite.model";
 
 export default defineComponent({
   async setup() {
-    const articles = ref([] as ArticleModel[]);
+    const articles = ref([] as ArticleFavoriteModel[]);
+    const filter = ref(false);
+    const favorite = ref(false);
+
+    async function fetch() {
+      console.log("fetching auth..");
+
+      let url = "articles/all";
+      if (filter.value) url += `?favorite=${favorite.value}`;
+      const res = await fetchJsonAuth(url);
+
+      console.log(res);
+      articles.value = res.articles;
+      console.log(articles.value);
+    }
+
+    watch(filter, async () => await fetch());
+    watch(favorite, async () => await fetch());
 
     if (loggedIn.value) {
-      console.log("fetching auth..");
-      articles.value = (await fetchJsonAuth("articles/all")).articles;
-      console.log(articles.value);
+      await fetch();
     } else {
       articles.value = (await getJson("articles")).articles;
     }
 
     return {
       articles,
+      filter,
+      favorite,
     };
   },
 });
@@ -76,6 +113,10 @@ export default defineComponent({
 
 .card[disabled="true"] {
   opacity: 0.4;
+}
+
+form {
+  margin: 32px
 }
 
 ul {
