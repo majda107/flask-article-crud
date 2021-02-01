@@ -1,6 +1,6 @@
 <template>
   <div>
-    <form>
+    <form v-if="loggedIn">
       <div class="form-group">
         <input type="checkbox" v-model="filter" class="form-check-input" />
         <label class="form-check-label">Filter</label>
@@ -30,7 +30,7 @@
         <div class="card-header">
           {{ a.author || "No author" }}
 
-          <span v-if="a.favorite">[FAVORITE]</span>
+          <span style="float: right" v-if="a.favorite">⭐</span>
         </div>
 
         <img :src="a.image" class="card-img-top" />
@@ -82,6 +82,7 @@ export default defineComponent({
       articles,
       filter,
       favorite,
+      loggedIn: loggedIn,
     };
   },
 });
@@ -116,7 +117,7 @@ export default defineComponent({
 }
 
 form {
-  margin: 32px
+  margin: 32px;
 }
 
 ul {

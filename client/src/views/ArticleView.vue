@@ -11,7 +11,7 @@
       <button v-else class="btn btn-success edit" @click="save()">Save</button>
 
       <button class="btn btn-danger edit" @click="remove()">Delete</button>
-      <button class="btn btn-secondary edit" @click="favorite()">
+      <button class="btn btn-warning edit" @click="favorite()">
         {{ article.favorite ? "Unfavorite" : "Favorite" }}
       </button>
     </template>
